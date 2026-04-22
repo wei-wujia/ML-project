@@ -12,4 +12,4 @@ env/
 
 # IDE 配置
 .vscode/
-.idea/
+.idea/models/
