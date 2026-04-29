@@ -56,8 +56,8 @@ python main.py --algo linear --data house --process train
 
 运行完成后，模型会自动保存到 `models/` 目录，训练日志和损失曲线会保存到 `results/` 目录。
 
-📖 详细使用指南
-通用参数说明
+## 📖 详细使用指南
+# 通用参数说明
 | 参数 | 说明 | 可选值 |
 |------|------|--------|
 | `--algo` | 选择算法 | `knn` / `linear` / `logistic` / `svm` / `ann` |
@@ -65,48 +65,48 @@ python main.py --algo linear --data house --process train
 | `--process` | 执行流程 | `train`（训练）/ `test`（测试） |
 | `--model_path` | 测试时指定模型路径 | 可选，不填则自动加载最新模型 |
 
-1. 线性回归（房价预测）
-# 最小二乘法
+# 1. 线性回归（房价预测）
+最小二乘法
 python main.py --algo linear --data house --process train
 
-# 梯度下降法
+梯度下降法
 python main.py --algo linear --data house --process train --lr_method gradient_descent --learning_rate 0.001
 
-2. 逻辑回归
-# Titanic 二分类
+# 2. 逻辑回归
+Titanic 二分类
 python main.py --algo logistic --data titanic --process train
 
-# MNIST 0和1二分类
+MNIST 0和1二分类
 python main.py --algo logistic --data mnist --process train --mnist_class1 0 --mnist_class2 1
 
-3. KNN
-# Titanic 二分类
+# 3. KNN
+Titanic 二分类
 python main.py --algo knn --data titanic --process train --n_neighbors 5
 
-# CIFAR-10 十分类
+CIFAR-10 十分类
 python main.py --algo knn --data cifar10 --process train --cifar10_multi
 
-4. SVM
+# 4. SVM
 
-# Titanic 二分类（线性核）
+Titanic 二分类（线性核）
 python main.py --algo svm --data titanic --process train --kernel linear --C 1.0
 
-# CIFAR-10 cat vs dog 二分类（RBF核）
+CIFAR-10 cat vs dog 二分类（RBF核）
 python main.py --algo svm --data cifar10 --process train --cifar10_class1 cat --cifar10_class2 dog --kernel rbf
 
-5. 人工神经网络（ANN）
-# 房价回归预测
+# 5. 人工神经网络（ANN）
+房价回归预测
 python main.py --algo ann --data house --process train
 
-# Titanic 二分类（带Dropout）
+Titanic 二分类（带Dropout）
 python main.py --algo ann --data titanic --process train --dropout_rate 0.2 --learning_rate 0.001
 
-# CIFAR-10 十分类（推荐配置）
+CIFAR-10 十分类
 python main.py --algo ann --data cifar10 --process train --cifar10_multi
 
-6. 测试已训练模型
-# 自动加载最新模型
+# 6. 测试已训练模型
+自动加载最新模型
 python main.py --algo ann --data titanic --process test
 
-# 指定模型路径
+指定模型路径
 python main.py --algo linear --data house --process test --model_path models/linear_house_20260428.pkl
