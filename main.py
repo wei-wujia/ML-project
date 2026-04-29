@@ -25,6 +25,7 @@ from KNN import KNN
 from linear_regression import LinearRegression
 from logistic_regression import LogisticRegression
 from SVM import SVM
+from ANN import ANN
 # ===================== 命令行参数解析 =====================
 def parse_args():
     '''
@@ -54,15 +55,24 @@ def parse_args():
         python main.py --algo svm --data mnist --process train --mnist_class1 0 --mnist_class2 1
         #SVM做cifar10自选cat和dog两个类别二分类训练
         python main.py --algo svm --data cifar10 --process train --cifar10_class1 cat --cifar10_class2 dog
-        
+    5.ANN
+        #ANN做house房价预测
+        python main.py --algo ann --data house --process train
+        #ANN做titanic二分类
+        python main.py --algo ann --data titanic --process train
+        #ANN做cifar10自选二分类
+        python main.py --algo ann --data cifar10 --process train --cifar10_class1 cat --cifar10_class2 dog
+        #ANN做cifar10十分类
+        python main.py --algo ann --data cifar10 --process train --cifar10_multi
+
     使用已训练模型测试（自动加载最新模型）
         python main.py --algo {} --data {} --process test (--model path {})
     '''
     parser = argparse.ArgumentParser(description='机器学习项目统一调度入口')
     # 核心必填参数
     parser.add_argument('--algo', type=str, required=True, 
-                        choices=['knn', 'linear', 'logistic', 'svm'],
-                        help='选择算法：knn/linear/logistic/svm')
+                    choices=['knn', 'linear', 'logistic', 'svm', 'ann'],
+                    help='选择算法：knn/linear/logistic/svm/ann')
     parser.add_argument('--data', type=str, required=True,
                         choices=['titanic', 'house', 'mnist', 'cifar10'],
                         help='选择数据集：titanic/house/mnist/cifar10')
@@ -96,7 +106,12 @@ def parse_args():
                         help='线性回归求解方式：normal_equation/gradient_descent')
     parser.add_argument('--learning_rate', type=float, default=0.01, help='梯度下降学习率')
     parser.add_argument('--n_iterations', type=int, default=1000, help='梯度下降迭代轮数')
-    
+    parser.add_argument('--hidden_layers', type=str, default='64,32', 
+                        help='ANN隐藏层结构，逗号分隔，如"64,32"表示两个隐藏层')
+    parser.add_argument('--activation', type=str, default='relu', 
+                        help='ANN隐藏层激活函数：relu/sigmoid/tanh')
+    parser.add_argument('--dropout_rate', type=float, default=0.0,
+                    help='ANN Dropout比率，0.0-1.0之间，0表示不使用Dropout，推荐0.2-0.5')
     return parser.parse_args()
 
 
@@ -253,7 +268,7 @@ def load_cifar10(use_multi_class=False, class1=None, class2=None):
                 if not os.path.isfile(img_path):
                     continue
 
-                # 读取图片：转灰度图（降低KNN计算量，32x32=1024维）
+                # 读取图片
                 img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
                 if img is None:
                     continue
@@ -304,6 +319,10 @@ def check_algo_data_match(args):
     # KNN仅支持分类任务，不支持house回归
     if args.algo == 'knn' and args.data == 'house':
         raise ValueError(f"当前KNN实现为分类算法，不支持house回归数据集")
+    
+    # ANN支持所有数据集
+    if args.algo == 'ann':
+        pass
 
 # ===================== 模型初始化 =====================
 def init_model(args):
@@ -323,6 +342,15 @@ def init_model(args):
         )
     elif args.algo == 'svm':
         return SVM(C=args.C, kernel=args.kernel, max_iter=args.n_iterations)
+    elif args.algo == 'ann':
+    # 解析隐藏层结构
+        hidden_layers = tuple(map(int, args.hidden_layers.split(',')))
+        return ANN(
+            hidden_layers=hidden_layers,
+            learning_rate=args.learning_rate,
+            n_iterations=args.n_iterations,
+            activation=args.activation,
+            dropout_rate=args.dropout_rate)
     else:
         raise ValueError(f"不支持的算法：{args.algo}")
 
@@ -353,12 +381,12 @@ def save_results(args, metrics, loss_history=None):
         f.write("="*50 + "\n")
     print(f"指标已保存至：{log_path}")
     
-    # 2. 保存损失曲线png（仅线性回归梯度下降模式有损失记录）
+    # 2. 保存损失曲线png（线性回归梯度下降模式和ANN有损失记录）
     if loss_history is not None and len(loss_history) > 0:
         plt.figure(figsize=(10, 6))
-        plt.plot(loss_history, label='Training MSE Loss')
+        plt.plot(loss_history, label='Training Loss')
         plt.xlabel('Iteration Epoch')
-        plt.ylabel('MSE Loss')
+        plt.ylabel('Loss')
         plt.title(f'{args.algo}_{args.data} Training Loss Curve')
         plt.legend()
         plt.grid(True, alpha=0.3)
@@ -418,7 +446,9 @@ def train(args):
     print(f"标准化器已保存至：{scaler_path}")
     
     # 7. 保存结果
-    loss_history = model.loss_history if args.algo == 'linear' and args.lr_method == 'gradient_descent' else None
+    loss_history = None
+    if (args.algo == 'linear' and args.lr_method == 'gradient_descent') or args.algo == 'ann':
+        loss_history = model.loss_history
     save_results(args, metrics, loss_history)
 
 # ===================== 测试主流程 =====================
